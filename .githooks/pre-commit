@@ -1,0 +1,4 @@
+#!/bin/sh
+# Runs the same lint checks as CI, so formatting and lint failures are caught before a commit
+# instead of after a push. Enabled by `make install` (git config core.hooksPath .githooks).
+exec make lint

@@ -1,0 +1,24 @@
+# Keeps dependencies current: minor and patch updates arrive as one grouped PR per ecosystem
+# per week, majors as separate PRs so a breaking change does not block the safe ones.
+# Cooldown: a new release is proposed only after 3 days, because malicious versions
+# published from hijacked accounts are usually found and removed from the registry by then.
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /backend
+    schedule: { interval: weekly }
+    cooldown: { default-days: 3 }
+    groups:
+      go: { patterns: ['*'], update-types: [minor, patch] }
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule: { interval: weekly }
+    cooldown: { default-days: 3 }
+    groups:
+      npm: { patterns: ['*'], update-types: [minor, patch] }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    cooldown: { default-days: 3 }
+    groups:
+      actions: { patterns: ['*'], update-types: [minor, patch] }

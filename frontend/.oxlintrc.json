@@ -1,0 +1,91 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc", "import", "vitest"],
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "error",
+    "react/only-export-components": [
+      "warn",
+      {
+        "allowConstantExport": true
+      }
+    ],
+    "import/no-cycle": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["../**"],
+            "message": "Import from '@/...' instead of a parent directory."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["src/components/**/*.tsx", "src/App.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@/api",
+                "importNames": ["api"],
+                "message": "Components get server data through hooks in '@/hooks'; import only types from '@/api'."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@tanstack/*"],
+                "message": "Components get server data through hooks in '@/hooks', not React Query directly."
+              },
+              {
+                "group": ["../**"],
+                "message": "Import from '@/...' instead of a parent directory."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/components/ui/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/hooks", "@/api", "@/components/*", "!@/components/ui/*", "@tanstack/*"],
+                "message": "ui/ primitives are presentational: no data, no feature components."
+              },
+              {
+                "group": ["../**"],
+                "message": "Import from '@/...' instead of a parent directory."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/**/*.test.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["../**"],
+                "message": "Import from '@/...' instead of a parent directory."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+version: "2"
+
+linters:
+  # The standard set (errcheck, govet, ineffassign, staticcheck, unused) plus:
+  enable:
+    - bodyclose     # HTTP response bodies are closed
+    - depguard      # file layering rules, see below
+    - errorlint     # errors are compared with errors.Is/As, wrapped with %w
+    - misspell
+    - modernize     # suggests newer standard library idioms
+    - noctx         # outbound HTTP and SQL calls take a context
+    - nilerr        # no "return nil" right after checking err != nil
+    - rowserrcheck  # rows.Err() is checked after iterating
+    - sqlclosecheck # rows and statements are closed
+    - usestdlibvars # http.MethodGet over "GET", and so on
+  settings:
+    errcheck:
+      exclude-functions:
+        # Closing a reader or rows we are done with; there is nothing useful to do on error.
+        - (io.Closer).Close
+        - (*database/sql.Rows).Close
+        - (*database/sql.DB).Close
+        # Rollback after a failed statement; the statement's error is the one returned.
+        - (*database/sql.Tx).Rollback
+    # Enforces the "layers by file" convention from the README. Each file kind may only
+    # reach the layer it is allowed to know about.
+    depguard:
+      rules:
+        types-are-plain-data:
+          files: ["**/types.go"]
+          deny:
+            - { pkg: database/sql, desc: "types.go holds entities and rules only" }
+            - { pkg: net/http, desc: "types.go holds entities and rules only" }
+            - { pkg: context, desc: "types.go holds entities and rules only; no I/O" }
+        handlers-no-sql:
+          files: ["**/handler.go"]
+          deny:
+            - { pkg: database/sql, desc: "handlers call the service; SQL belongs in store.go" }
+        services-no-transport-or-sql:
+          files: ["**/service.go"]
+          deny:
+            - { pkg: net/http, desc: "services do not handle HTTP; use apperr constructors" }
+            - { pkg: weatherwatch/internal/httpx, desc: "HTTP response handling belongs in handler.go" }
+            - { pkg: database/sql, desc: "services use the Repository interface; SQL belongs in store.go" }
+        stores-no-transport:
+          files: ["**/store.go"]
+          deny:
+            - { pkg: net/http, desc: "stores only talk to the database" }
+            - { pkg: weatherwatch/internal/httpx, desc: "stores only talk to the database" }
+        apperr-is-a-leaf:
+          files: ["**/internal/apperr/*.go"]
+          deny:
+            - { pkg: weatherwatch/internal, desc: "apperr must not depend on other packages" }
+  exclusions:
+    rules:
+      # Test HTTP servers write fixed bodies; a failed write fails the test anyway.
+      - path: _test\.go
+        linters: [errcheck]
+        text: "w.Write"
+      # httptest.NewRequest already uses context.Background; tests need nothing more.
+      - path: _test\.go
+        linters: [noctx]
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes: [weatherwatch]
